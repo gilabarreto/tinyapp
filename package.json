@@ -16,5 +16,8 @@
   "bugs": {
     "url": "https://github.com/gilabarreto/tinyapp/issues"
   },
-  "homepage": "https://github.com/gilabarreto/tinyapp#readme"
+  "homepage": "https://github.com/gilabarreto/tinyapp#readme",
+  "dependencies": {
+    "express": "^4.18.1"
+  }
 }
