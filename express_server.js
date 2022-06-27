@@ -86,6 +86,13 @@ app.post("/urls/:shortURL/delete", (req, res) => {
   res.redirect(`/urls`)
 });
 
-
-
-
+// POST POST route that updates a URL resource.
+app.post("/urls/:id", (req, res) => {
+  const shortURL = req.params.id;
+  let { longURL } = req.body;
+  if (!longURL.startsWith("http://") || !longURL.startsWith("https://")) {
+    longURL = `http://${longURL}`
+  };
+  urlDatabase[shortURL] = longURL;
+  res.redirect(`/urls/${shortURL}`)
+})
