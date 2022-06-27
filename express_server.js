@@ -48,7 +48,7 @@ app.get("/urls", (req, res) => {
   res.render("urls_index", templateVars);
 });
 
-// GET Route for URL Submission Form
+// GET route for URL Submission Form
 app.get("/urls/new", (req, res) => {
   res.render("urls_new");
 });
@@ -65,10 +65,10 @@ app.get("/u/:shortURL", (req, res) => {
 });
 
 /////////////////////
-// POST resquests //
+// POST Resquests //
 ///////////////////
 
-// POST Route to receive the Form Submission.
+// POST route to receive the Form Submission.
 app.post("/urls", (req, res) => {
   const shortURL = generateRandomString();
   let { longURL } = req.body;
@@ -78,6 +78,14 @@ app.post("/urls", (req, res) => {
   urlDatabase[shortURL] = longURL;
   res.redirect(`/urls/${shortURL}`)
 });
+
+// POST route that removes a URL resource.
+app.post("/urls/:shortURL/delete", (req, res) => {
+  const shortURL = req.params.shortURL;
+  delete urlDatabase[shortURL]
+  res.redirect(`/urls`)
+});
+
 
 
 
