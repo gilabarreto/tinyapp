@@ -48,7 +48,7 @@ app.get("/urls.json", (req, res) => {
 });
 
 app.get("/urls", (req, res) => {
-  const templateVars = { urls: urlDatabase };
+  const templateVars = {   username: req.cookies["username"], urls: urlDatabase };
   res.render("urls_index", templateVars);
 });
 
@@ -58,7 +58,7 @@ app.get("/urls/new", (req, res) => {
 });
 
 app.get("/urls/:shortURL", (req, res) => {
-  const templateVars = { shortURL: req.params.shortURL, longURL: urlDatabase[req.params.shortURL] };
+  const templateVars = {   username: req.cookies["username"], shortURL: req.params.shortURL, longURL: urlDatabase[req.params.shortURL] };
   res.render("urls_show", templateVars);
 });
 
@@ -102,9 +102,16 @@ app.post("/urls/:id", (req, res) => {
   res.redirect(`/urls/${shortURL}`)
 });
 
-// POST Route that Endpoint to Handles Login.
+// POST Route Endpoint to Handle Login.
 app.post("/login", (req, res) => {
   const username = req.body.username;
   res.cookie("username", username);
+  res.redirect(`/urls`);
+});
+
+// POST Route /logout endpoint that clears the username cookie and redirects the user back to the /urls page.
+app.post("/logout", (req, res) => {
+  const username = req.body.username;
+  res.clearCookie("username", username);
   res.redirect(`/urls`);
 });
