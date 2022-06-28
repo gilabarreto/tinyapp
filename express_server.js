@@ -4,7 +4,7 @@
 const express = require("express");
 const app = express();
 const PORT = 8080; // default port 8080
-const cookieParser = require("cookie-parser"); 
+const cookieParser = require("cookie-parser");
 const urlDatabase = {
   "b2xVn2": "http://www.lighthouselabs.ca",
   "9sm5xK": "http://www.google.com"
@@ -47,18 +47,27 @@ app.get("/urls.json", (req, res) => {
   res.json(urlDatabase);
 });
 
+// GET Route on /urls for a template to /urls_index.
 app.get("/urls", (req, res) => {
-  const templateVars = {   username: req.cookies["username"], urls: urlDatabase };
+  const templateVars = { username: req.cookies["username"], urls: urlDatabase };
   res.render("urls_index", templateVars);
 });
 
 // GET Route for URL Submission Form
 app.get("/urls/new", (req, res) => {
-  res.render("urls_new");
+  const templateVars = { username: req.cookies["username"], urls: urlDatabase };
+  res.render("urls_new", templateVars);
 });
 
+// GET Route on /register for a template to /urls_show.
+app.get("/register", (req, res) => {
+  const templateVars = { username: req.cookies["username"], urls: urlDatabase };
+  res.render("urls_register", templateVars);
+});
+
+// GET Route on /:shortlURL for a template to /urls_show.
 app.get("/urls/:shortURL", (req, res) => {
-  const templateVars = {   username: req.cookies["username"], shortURL: req.params.shortURL, longURL: urlDatabase[req.params.shortURL] };
+  const templateVars = { username: req.cookies["username"], shortURL: req.params.shortURL, longURL: urlDatabase[req.params.shortURL] };
   res.render("urls_show", templateVars);
 });
 
