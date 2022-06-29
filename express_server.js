@@ -42,9 +42,10 @@ function emailLookUp(email) {
   for (const userID in users) {
     const user = users[userID];
     if (user.email === email) {
-      return true
+      return user
     }
   }
+  return null
 }
 
 // Establish Server Connection
@@ -148,7 +149,6 @@ app.post("/register", (req, res) => {
   const userID = generateRandomString();
   const userEmail = req.body.email;
   const userPassword = req.body.password;
-  console.log(users);
 
   if (userEmail === "" || userPassword === "") {
     return res.status(400).send("E-mail and Password can not be blank, please try again.");
@@ -160,21 +160,29 @@ app.post("/register", (req, res) => {
 
   users[userID] = { id: userID, email: userEmail, password: userPassword };
 
+  console.log(users);
+
   res.cookie("user_id", userID);
   res.redirect(`/urls`);
 });
 
 // POST Route Endpoint to Handle Login.
 app.post("/login", (req, res) => {
-  const email = req.body.email;
-  for (const userID in users) {
-    const user = users[userID];
-    if (user.email === email) {
-      res.cookie("user_id", userID);
+
+  const userEmail = req.body.email;
+  const userPassword = req.body.password;
+
+  const user = emailLookUp(userEmail)
+
+    if (user && user.password === userPassword) {
+      res.cookie("user_id", user.id);
       return res.redirect(`/urls`);
+    } else if (user && user.password !== userPassword) {
+      return res.status(403).send("Wrong Password.")
+    } else {
+      return res.status(403).send("User not found.")
     }
-  }
-  res.send("Error");
+
 });
 
 // POST Route Endpoint to /logout that Clears the Username Cookie.
