@@ -20,20 +20,13 @@
             <label for="logout">Logged In As: <%= user.email %> </label>
             <input class="form-control" type="hidden" name="userID" value="<%= user.id %>"
               style="width: 150px; margin: 1em">
-            <button type="submit" class="btn btn-light">LogOut</button>
+            <button type="submit" class="btn btn-outline-light">LogOut</button>
           </div>
         </form>
         <% } else{ %>
-          <form class="form-inline" action="/login" method="POST">
-            <div class="form-group mb-2">
-              <label for="login">E-mail:</label>
-              <input class="form-control" type="text" name="email" placeholder="E-mail"
-                style="width: 150px; margin: 1em">
-              <input class="form-control" type="text" name="password" placeholder="Password"
-                style="width: 150px; margin: 1em">
-              <button type="submit" class="btn btn-light">Submit</button>
-            </div>
-          </form>
+          <div class="navbar-nav">
+          <a class="nav-item nav-link" href="/newlogin">Login</a>
+          </div>
           <% } %>
 
   </nav>

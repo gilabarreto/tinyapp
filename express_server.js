@@ -36,6 +36,17 @@ function generateRandomString() {
   return Math.random().toString(16).slice(2, 8);
 }
 
+// Function to check if the e-mail is already in the database.
+function emailLookUp(email) {
+
+  for (const userID in users) {
+    const user = users[userID];
+    if (user.email === email) {
+      return true
+    }
+  }
+}
+
 // Establish Server Connection
 app.listen(PORT, () => {
   console.log(`Example app listening on port ${PORT}!`);
@@ -73,10 +84,16 @@ app.get("/urls/new", (req, res) => {
   res.render("urls_new", templateVars);
 });
 
-// GET Route on /register for a template to /urls_show.
+// GET Route on /register for a template to /urls_register.
 app.get("/register", (req, res) => {
   const templateVars = { user: null };
   res.render("urls_register", templateVars);
+});
+
+// GET Route on /newlogin for a template to /urls_login.
+app.get("/newlogin", (req, res) => {
+  const templateVars = { user: null };
+  res.render("urls_login", templateVars);
 });
 
 // GET Route on /:shortlURL for a template to /urls_show.
@@ -131,16 +148,24 @@ app.post("/register", (req, res) => {
   const userID = generateRandomString();
   const userEmail = req.body.email;
   const userPassword = req.body.password;
-  users[userID] = { id: userID, email: userEmail, password: userPassword };
   console.log(users);
+
+  if (userEmail === "" || userPassword === "") {
+    return res.status(400).send("E-mail and Password can not be blank, please try again.");
+  }
+
+  if (emailLookUp(userEmail)) {
+    return res.status(400).send("E-mail already on our database.")
+  }
+
+  users[userID] = { id: userID, email: userEmail, password: userPassword };
+
   res.cookie("user_id", userID);
   res.redirect(`/urls`);
 });
 
 // POST Route Endpoint to Handle Login.
 app.post("/login", (req, res) => {
-  console.log("test", req.body)
-  console.log(users)
   const email = req.body.email;
   for (const userID in users) {
     const user = users[userID];

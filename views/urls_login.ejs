@@ -1,4 +1,4 @@
-<!-- URL Registration Form -->
+<!-- URL Login Page -->
 
 <!DOCTYPE html>
 <html lang="en">
@@ -19,20 +19,20 @@
   <%- include('partials/_header') %>
 
     <main style="margin: 1em;">
-      <h3>Registration Page</h3>
-      <form class="form-inline" action="/register" method="POST">
+      <h3>Login Page</h3>
+      <form class="form-inline" action="/login" method="POST">
         <div class="form-group mb-2">
-          <label for="email">E-mail</label>
-          <input class="form-control" type="email" name="email" placeholder="your@email.com"
+          <label for="login">E-mail:</label>
+          <input class="form-control" type="text" name="email" placeholder="E-mail"
             style="width: 200px; margin: 1em">
-            <br>
-            <label for="password">Password</label>
-          <input class="form-control" type="password" name="password" placeholder="Password"
+            <label for="login">Password:</label>
+          <input class="form-control" type="text" name="password" placeholder="Password"
             style="width: 200px; margin: 1em">
           <button type="submit" class="btn btn-primary">Submit</button>
         </div>
       </form>
     </main>
+
     <!-- Bootstrap JS -->
     <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js"
       integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo"
