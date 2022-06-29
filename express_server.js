@@ -9,6 +9,18 @@ const urlDatabase = {
   "b2xVn2": "http://www.lighthouselabs.ca",
   "9sm5xK": "http://www.google.com"
 };
+const users = {
+  "userRandomID": {
+    id: "userRandomID",
+    email: "user@example.com",
+    password: "purple-monkey-dinosaur"
+  },
+  "user2RandomID": {
+    id: "user2RandomID",
+    email: "user2@example.com",
+    password: "dishwasher-funk"
+  }
+};
 
 // EJS View Engine
 app.set("view engine", "ejs");
@@ -49,25 +61,28 @@ app.get("/urls.json", (req, res) => {
 
 // GET Route on /urls for a template to /urls_index.
 app.get("/urls", (req, res) => {
-  const templateVars = { username: req.cookies["username"], urls: urlDatabase };
+  const user = users[req.cookies["user_id"]]
+  const templateVars = { user: user, urls: urlDatabase };
   res.render("urls_index", templateVars);
 });
 
 // GET Route for URL Submission Form
 app.get("/urls/new", (req, res) => {
-  const templateVars = { username: req.cookies["username"], urls: urlDatabase };
+  const user = users[req.cookies["user_id"]]
+  const templateVars = { user: user, urls: urlDatabase };
   res.render("urls_new", templateVars);
 });
 
 // GET Route on /register for a template to /urls_show.
 app.get("/register", (req, res) => {
-  const templateVars = { username: req.cookies["username"], urls: urlDatabase };
+  const templateVars = { user: null };
   res.render("urls_register", templateVars);
 });
 
 // GET Route on /:shortlURL for a template to /urls_show.
 app.get("/urls/:shortURL", (req, res) => {
-  const templateVars = { username: req.cookies["username"], shortURL: req.params.shortURL, longURL: urlDatabase[req.params.shortURL] };
+  const user = users[req.cookies["user_id"]]
+  const templateVars = { user: user, shortURL: req.params.shortURL, longURL: urlDatabase[req.params.shortURL] };
   res.render("urls_show", templateVars);
 });
 
@@ -111,16 +126,34 @@ app.post("/urls/:id", (req, res) => {
   res.redirect(`/urls/${shortURL}`)
 });
 
-// POST Route Endpoint to Handle Login.
-app.post("/login", (req, res) => {
-  const username = req.body.username;
-  res.cookie("username", username);
+// POST Route Endpoint to Handle Register.
+app.post("/register", (req, res) => {
+  const userID = generateRandomString();
+  const userEmail = req.body.email;
+  const userPassword = req.body.password;
+  users[userID] = { id: userID, email: userEmail, password: userPassword };
+  console.log(users);
+  res.cookie("user_id", userID);
   res.redirect(`/urls`);
 });
 
-// POST Route /logout endpoint that clears the username cookie and redirects the user back to the /urls page.
+// POST Route Endpoint to Handle Login.
+app.post("/login", (req, res) => {
+  console.log("test", req.body)
+  console.log(users)
+  const email = req.body.email;
+  for (const userID in users) {
+    const user = users[userID];
+    if (user.email === email) {
+      res.cookie("user_id", userID);
+      return res.redirect(`/urls`);
+    }
+  }
+  res.send("Error");
+});
+
+// POST Route Endpoint to /logout that Clears the Username Cookie.
 app.post("/logout", (req, res) => {
-  const username = req.body.username;
-  res.clearCookie("username", username);
+  res.clearCookie("user_id");
   res.redirect(`/urls`);
 });
