@@ -6,8 +6,8 @@ const app = express();
 const PORT = 8080; // default port 8080
 const cookieParser = require("cookie-parser");
 const urlDatabase = {
-  "b2xVn2": "http://www.lighthouselabs.ca",
-  "9sm5xK": "http://www.google.com"
+  "b2xVn2": { longURL: "http://www.lighthouselabs.ca", userID: "user2RandomID" },
+  "9sm5xK": { longURL: "http://www.google.com", userID: "userRandomID" }
 };
 const users = {
   "userRandomID": {
@@ -48,6 +48,20 @@ function emailLookUp(email) {
   return null
 }
 
+// Function that returns the URLs where the userID is equal to the id of the currently logged-in user.
+function urlsForUser(id) {
+
+  const result = {};
+
+  for (const shortlURL in urlDatabase) {
+    const url = urlDatabase[shortlURL];
+    if (url.userID === id) {
+      result[shortlURL] = url;
+    }
+  }
+  return result;
+}
+
 // Establish Server Connection
 app.listen(PORT, () => {
   console.log(`Example app listening on port ${PORT}!`);
@@ -74,7 +88,7 @@ app.get("/urls.json", (req, res) => {
 // GET Route on /urls for a template to /urls_index.
 app.get("/urls", (req, res) => {
   const user = users[req.cookies["user_id"]]
-  const templateVars = { user: user, urls: urlDatabase };
+  const templateVars = { user: user, urls: urlsForUser(req.cookies["user_id"]) };
   res.render("urls_index", templateVars);
 });
 
@@ -99,16 +113,36 @@ app.get("/newlogin", (req, res) => {
 
 // GET Route on /:shortlURL for a template to /urls_show.
 app.get("/urls/:shortURL", (req, res) => {
+ 
   const user = users[req.cookies["user_id"]]
-  const templateVars = { user: user, shortURL: req.params.shortURL, longURL: urlDatabase[req.params.shortURL] };
+  const urlObj = urlDatabase[req.params.shortURL]
+
+  if (urlObj === undefined) {
+    return res.send("That page doesn't exist.")
+  }
+  
+  const longURL = urlObj.longURL
+  
+  if (urlObj.userID !== req.cookies["user_id"]) {
+    return res.send("You don't have permission to access that page.")
+  };
+  
+  const templateVars = { user: user, shortURL: req.params.shortURL, longURL: longURL };
   res.render("urls_show", templateVars);
+
 });
 
 // Redirect any Request to "/u/:shortURL" to its longURL.
 app.get("/u/:shortURL", (req, res) => {
   const shortURL = req.params.shortURL
   const longURL = urlDatabase[shortURL]
+
+  if (!longURL) {
+    return res.status(400).send("Short URL does not exist.")
+  }
+
   res.redirect(longURL);
+
 });
 
 /////////////////////
@@ -117,26 +151,42 @@ app.get("/u/:shortURL", (req, res) => {
 
 // POST Route to Receive the Form Submission.
 app.post("/urls", (req, res) => {
+  const user = users[req.cookies["user_id"]]
   const shortURL = generateRandomString();
   let { longURL } = req.body;
-  if (!longURL.startsWith("http://") || !longURL.startsWith("https://")) {
-    longURL = `http://${longURL}`
-  };
-  urlDatabase[shortURL] = longURL;
-  res.redirect(`/urls/${shortURL}`)
+
+  if (!user) {
+    return res.status(400).send("User is not logged in.")
+  } else {
+    if (!longURL.startsWith("http://") || !longURL.startsWith("https://")) {
+      longURL = `http://${longURL}`
+    };
+    urlDatabase[shortURL] = { longURL: longURL, userID: user.id };
+    return res.redirect(`/urls/${shortURL}`)
+  }
 });
 
 // POST Route that Removes a URL Resource.
 app.post("/urls/:shortURL/delete", (req, res) => {
+  const user = users[req.cookies["user_id"]]
   const shortURL = req.params.shortURL;
+  
+  if (!user) {
+    return res.send("You don't have permission to delete that page.")
+  }
   delete urlDatabase[shortURL]
   res.redirect(`/urls`)
 });
 
 // POST Route that Updates a URL Resource.
 app.post("/urls/:id", (req, res) => {
+  const user = users[req.cookies["user_id"]]
   const shortURL = req.params.id;
   let { longURL } = req.body;
+
+  if (!user) {
+    return res.send("You don't have permission to update that page.")
+  } 
   if (!longURL.startsWith("http://") || !longURL.startsWith("https://")) {
     longURL = `http://${longURL}`
   };
@@ -160,32 +210,30 @@ app.post("/register", (req, res) => {
 
   users[userID] = { id: userID, email: userEmail, password: userPassword };
 
-  console.log(users);
-
   res.cookie("user_id", userID);
   res.redirect(`/urls`);
 });
 
 // POST Route Endpoint to Handle Login.
 app.post("/login", (req, res) => {
-
   const userEmail = req.body.email;
   const userPassword = req.body.password;
 
   const user = emailLookUp(userEmail)
 
-    if (user && user.password === userPassword) {
-      res.cookie("user_id", user.id);
-      return res.redirect(`/urls`);
-    } else if (user && user.password !== userPassword) {
-      return res.status(403).send("Wrong Password.")
-    } else {
-      return res.status(403).send("User not found.")
-    }
+  if (user && user.password === userPassword) {
+    res.cookie("user_id", user.id);
+    urlsForUser(user.id)
+    return res.redirect(`/urls`);
+  } else if (user && user.password !== userPassword) {
+    return res.status(403).send("Wrong Password.")
+  } else {
+    return res.status(403).send("User not found.")
+  }
 
 });
 
-// POST Route Endpoint to /logout that Clears the Username Cookie.
+// POST Route Endpoint to /logout that Clears the user_id Cookie.
 app.post("/logout", (req, res) => {
   res.clearCookie("user_id");
   res.redirect(`/urls`);

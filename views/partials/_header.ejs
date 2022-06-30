@@ -10,11 +10,12 @@
     <div class="collapse navbar-collapse" id="navbarNavAltMarkup">
       <div class="navbar-nav">
         <a class="nav-item nav-link" href="/urls">My URLs</a>
-        <a class="nav-item nav-link" href="/urls/new">Create New URL</a>
-        <a class="nav-item nav-link" href="/register">Register</a>
       </div>
 
       <% if(user){ %>
+        <div class="navbar-nav">
+          <a class="nav-item nav-link" href="/urls/new">Create New URL</a>
+        </div>
         <form class="form-inline" action="/logout" method="POST">
           <div class="form-group mb-2">
             <label for="logout">Logged In As: <%= user.email %> </label>
@@ -23,9 +24,12 @@
             <button type="submit" class="btn btn-outline-light">LogOut</button>
           </div>
         </form>
+        
         <% } else{ %>
           <div class="navbar-nav">
-          <a class="nav-item nav-link" href="/newlogin">Login</a>
+            <a class="nav-item nav-link" href="/newlogin">Create New URL</a>
+            <a class="nav-item nav-link" href="/register">Register</a>
+            <a class="nav-item nav-link" href="/newlogin">Login</a>
           </div>
           <% } %>
 
