@@ -5,6 +5,7 @@ const express = require("express");
 const app = express();
 const PORT = 8080; // default port 8080
 const cookieParser = require("cookie-parser");
+const bcrypt = require('bcryptjs');
 const urlDatabase = {
   "b2xVn2": { longURL: "http://www.lighthouselabs.ca", userID: "user2RandomID" },
   "9sm5xK": { longURL: "http://www.google.com", userID: "userRandomID" }
@@ -113,20 +114,20 @@ app.get("/newlogin", (req, res) => {
 
 // GET Route on /:shortlURL for a template to /urls_show.
 app.get("/urls/:shortURL", (req, res) => {
- 
+
   const user = users[req.cookies["user_id"]]
   const urlObj = urlDatabase[req.params.shortURL]
 
   if (urlObj === undefined) {
     return res.send("That page doesn't exist.")
   }
-  
+
   const longURL = urlObj.longURL
-  
+
   if (urlObj.userID !== req.cookies["user_id"]) {
     return res.send("You don't have permission to access that page.")
   };
-  
+
   const templateVars = { user: user, shortURL: req.params.shortURL, longURL: longURL };
   res.render("urls_show", templateVars);
 
@@ -170,7 +171,7 @@ app.post("/urls", (req, res) => {
 app.post("/urls/:shortURL/delete", (req, res) => {
   const user = users[req.cookies["user_id"]]
   const shortURL = req.params.shortURL;
-  
+
   if (!user) {
     return res.send("You don't have permission to delete that page.")
   }
@@ -186,7 +187,7 @@ app.post("/urls/:id", (req, res) => {
 
   if (!user) {
     return res.send("You don't have permission to update that page.")
-  } 
+  }
   if (!longURL.startsWith("http://") || !longURL.startsWith("https://")) {
     longURL = `http://${longURL}`
   };
@@ -199,6 +200,7 @@ app.post("/register", (req, res) => {
   const userID = generateRandomString();
   const userEmail = req.body.email;
   const userPassword = req.body.password;
+  const hashedPassword = bcrypt.hashSync(userPassword, 10);
 
   if (userEmail === "" || userPassword === "") {
     return res.status(400).send("E-mail and Password can not be blank, please try again.");
@@ -208,7 +210,7 @@ app.post("/register", (req, res) => {
     return res.status(400).send("E-mail already on our database.")
   }
 
-  users[userID] = { id: userID, email: userEmail, password: userPassword };
+  users[userID] = { id: userID, email: userEmail, password: hashedPassword };
 
   res.cookie("user_id", userID);
   res.redirect(`/urls`);
@@ -218,14 +220,15 @@ app.post("/register", (req, res) => {
 app.post("/login", (req, res) => {
   const userEmail = req.body.email;
   const userPassword = req.body.password;
+  const hashedPassword = bcrypt.hashSync(userPassword, 10);
 
   const user = emailLookUp(userEmail)
 
-  if (user && user.password === userPassword) {
+  if (user && bcrypt.compareSync(userPassword, user.password)) {
     res.cookie("user_id", user.id);
     urlsForUser(user.id)
     return res.redirect(`/urls`);
-  } else if (user && user.password !== userPassword) {
+  } else if (user && !bcrypt.compareSync(userPassword, user.password)) {
     return res.status(403).send("Wrong Password.")
   } else {
     return res.status(403).send("User not found.")
