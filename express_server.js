@@ -4,7 +4,7 @@
 const express = require("express");
 const app = express();
 const PORT = 8080; // default port 8080
-const cookieParser = require("cookie-parser");
+const cookieSession = require('cookie-session');
 const bcrypt = require('bcryptjs');
 const urlDatabase = {
   "b2xVn2": { longURL: "http://www.lighthouselabs.ca", userID: "user2RandomID" },
@@ -29,8 +29,10 @@ app.set("view engine", "ejs");
 // Express body-parser
 app.use(express.urlencoded({ extended: true })); // body-parser package deprecated, use express built-in version.
 
-// Express cookie-parser
-app.use(cookieParser());
+app.use(cookieSession({
+  name: 'session',
+  keys: ['secretkeyfortinyapp'],
+}))
 
 // Function that returns a string of 6 random alphanumeric characters.
 function generateRandomString() {
@@ -88,14 +90,14 @@ app.get("/urls.json", (req, res) => {
 
 // GET Route on /urls for a template to /urls_index.
 app.get("/urls", (req, res) => {
-  const user = users[req.cookies["user_id"]]
-  const templateVars = { user: user, urls: urlsForUser(req.cookies["user_id"]) };
+  const user = users[req.session["user_id"]]
+  const templateVars = { user: user, urls: urlsForUser(req.session["user_id"]) };
   res.render("urls_index", templateVars);
 });
 
 // GET Route for URL Submission Form
 app.get("/urls/new", (req, res) => {
-  const user = users[req.cookies["user_id"]]
+  const user = users[req.session["user_id"]]
   const templateVars = { user: user, urls: urlDatabase };
   res.render("urls_new", templateVars);
 });
@@ -115,7 +117,7 @@ app.get("/newlogin", (req, res) => {
 // GET Route on /:shortlURL for a template to /urls_show.
 app.get("/urls/:shortURL", (req, res) => {
 
-  const user = users[req.cookies["user_id"]]
+  const user = users[req.session["user_id"]]
   const urlObj = urlDatabase[req.params.shortURL]
 
   if (urlObj === undefined) {
@@ -124,7 +126,7 @@ app.get("/urls/:shortURL", (req, res) => {
 
   const longURL = urlObj.longURL
 
-  if (urlObj.userID !== req.cookies["user_id"]) {
+  if (urlObj.userID !== req.session["user_id"]) {
     return res.send("You don't have permission to access that page.")
   };
 
@@ -152,7 +154,7 @@ app.get("/u/:shortURL", (req, res) => {
 
 // POST Route to Receive the Form Submission.
 app.post("/urls", (req, res) => {
-  const user = users[req.cookies["user_id"]]
+  const user = users[req.session["user_id"]]
   const shortURL = generateRandomString();
   let { longURL } = req.body;
 
@@ -169,7 +171,7 @@ app.post("/urls", (req, res) => {
 
 // POST Route that Removes a URL Resource.
 app.post("/urls/:shortURL/delete", (req, res) => {
-  const user = users[req.cookies["user_id"]]
+  const user = users[req.session["user_id"]]
   const shortURL = req.params.shortURL;
 
   if (!user) {
@@ -181,16 +183,17 @@ app.post("/urls/:shortURL/delete", (req, res) => {
 
 // POST Route that Updates a URL Resource.
 app.post("/urls/:id", (req, res) => {
-  const user = users[req.cookies["user_id"]]
+  const user = users[req.session["user_id"]]
   const shortURL = req.params.id;
   let { longURL } = req.body;
 
-  if (!user) {
+   if (!user) {
     return res.send("You don't have permission to update that page.")
   }
   if (!longURL.startsWith("http://") || !longURL.startsWith("https://")) {
     longURL = `http://${longURL}`
   };
+
   urlDatabase[shortURL] = longURL;
   res.redirect(`/urls/${shortURL}`)
 });
@@ -212,7 +215,8 @@ app.post("/register", (req, res) => {
 
   users[userID] = { id: userID, email: userEmail, password: hashedPassword };
 
-  res.cookie("user_id", userID);
+  req.session.user_id = userID;
+  req.session.user_id = userID;
   res.redirect(`/urls`);
 });
 
@@ -220,12 +224,11 @@ app.post("/register", (req, res) => {
 app.post("/login", (req, res) => {
   const userEmail = req.body.email;
   const userPassword = req.body.password;
-  const hashedPassword = bcrypt.hashSync(userPassword, 10);
 
   const user = emailLookUp(userEmail)
 
   if (user && bcrypt.compareSync(userPassword, user.password)) {
-    res.cookie("user_id", user.id);
+    req.session.user_id = user.id;
     urlsForUser(user.id)
     return res.redirect(`/urls`);
   } else if (user && !bcrypt.compareSync(userPassword, user.password)) {
@@ -238,6 +241,6 @@ app.post("/login", (req, res) => {
 
 // POST Route Endpoint to /logout that Clears the user_id Cookie.
 app.post("/logout", (req, res) => {
-  res.clearCookie("user_id");
+  req.session = null;
   res.redirect(`/urls`);
 });
