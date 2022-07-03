@@ -23,4 +23,4 @@ TinyApp is a full stack web application built with Node and Express that allows 
 
 ## Enjoy!
 
-(TinyApp.png)
+![""](tiny.gif)
